@@ -24,7 +24,7 @@ def checkPredef(addStr):
 def interpCInst(instruct,currInst): # step through to check for each bit
     equalLoc = instruct.find('=')
     MLoc = instruct.find('M')   
-    if(MLoc-1==instruct.find("JMP")):    #if the 'M' found is within "JMP",
+    if(MLoc-1==instruct.find("JMP") and instruct.find("JMP")>-1):    #if the 'M' found is within "JMP",
         MLoc = -1                        #there is no legit 'M' on this line
     ALoc = instruct.find('A')
     DLoc = instruct.find('D')
@@ -41,9 +41,9 @@ def interpCInst(instruct,currInst): # step through to check for each bit
     else:
         currInst.append('0')#a-bit set to 0, or not using M
         # usedLoc = ALoc
-        if(equalLoc<1):
-            #TODO: deal with jump instructs like D; JMP with no '='    and (LOOP) lines
-            test = 1
+        # if(equalLoc<1):
+        #     #TODO: deal with jump instructs like D; JMP with no '='    and (LOOP) lines
+        #     test = 1
 #            print("Invalid Instruction?")
     
     calc = instruct[equalLoc+1:]
