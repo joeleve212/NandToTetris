@@ -1,25 +1,151 @@
 # NAND -> Tetris Assembler - Joe Leveille
-def interpCInst(instruct): #TODO: step through to check for each bit
-    #
-    print("C instruct")
-    return
 
+def checkPredef(addStr):
+    if(addStr[0]=='R' and addStr[1:].isnumeric()):
+        addVal = addStr[1:]
+    elif(addStr=="SP"):
+        addVal = "0"
+    elif(addStr=="LCL"):
+        addVal = "1"
+    elif(addStr=="ARG"):
+        addVal = "2"
+    elif(addStr=="THIS"):
+        addVal = "3"
+    elif(addStr=="THAT"):
+        addVal = "4"
+    elif(addStr=="SCREEN"):
+        addVal = "16384"
+    elif(addStr=="KBD"):
+        addVal = "24576"
+    else:
+        addVal = "-1"           #this case only for invalid addresses
+    return addVal
+
+def interpCInst(instruct,currInst): # step through to check for each bit
+    equalLoc = instruct.find('=')
+    MLoc = instruct.find('M')
+    ALoc = instruct.find('A')
+    DLoc = instruct.find('D')
+
+    if(instruct.find('J')+1):   #checks if this is jump instruct
+        JLoc = instruct.find('J')
+        jumpCode = instruct[JLoc:JLoc+3]    #handle jump instructions later
+    else:
+        jumpCode = "000"
+
+    if(MLoc>equalLoc):      #a-bit should be 1, assuming proper syntax (not using both A & M)
+        currInst.append('1')
+        # usedLoc = MLoc          #usedLoc is location of either A or M, whichever is used in this instruct
+    else:
+        currInst.append('0')#a-bit set to 0, or not using M
+        # usedLoc = ALoc
+        if(equalLoc<1):
+            #TODO: deal with jump instructs like D; JMP with no '='    and (LOOP) lines
+            test = 1
+#            print("Invalid Instruction?")
+    
+    calc = instruct[equalLoc+1:]
+    
+    if(calc.find(';')>-1):              #cut out jump instruction if there is one
+        calc = calc[:calc.find(';')]
+#    print(calc + "Is the calculation")
+    if(calc=="0"):                                  #This block fills in the c-bits
+        currInst.extend(['1','0','1','0','1','0'])
+    elif(calc=="1"):
+        currInst.extend(['1','1','1','1','1','1'])
+    elif(calc=="-1"):
+        currInst.extend(['1','1','1','0','1','0'])
+    elif(calc=="D"):
+        currInst.extend(['0','0','1','1','0','0'])
+    elif(calc=="A" or calc=="M"):
+        currInst.extend(['1','1','0','0','0','0'])
+    elif(calc=="!D"):
+        currInst.extend(['0','0','1','1','0','1'])
+    elif(calc=="!A" or calc=="!M"):
+        currInst.extend(['1','1','0','0','0','1'])
+    elif(calc=="-D"):
+        currInst.extend(['0','0','1','1','1','1'])
+    elif(calc=="-A" or calc=="-M"):
+        currInst.extend(['1','1','0','0','1','1'])
+    elif(calc=="D+1" or calc=="1+D"):
+        currInst.extend(['0','1','1','1','1','1'])
+    elif(calc=="A+1" or calc=="1+A" or calc=="M+1" or calc=="1+M"):
+        currInst.extend(['1','1','0','1','1','1'])
+    elif(calc=="D-1"):
+        currInst.extend(['0','0','1','1','1','0'])
+    elif(calc=="A-1" or calc=="M-1"):
+        currInst.extend(['1','1','0','0','1','0'])
+    elif(calc=="D+A" or calc=="A+D" or calc=="M+D" or calc=="D+M"):
+        currInst.extend(['0','0','0','0','1','0'])
+    elif(calc=="D-A" or calc=="D-M"):
+        currInst.extend(['0','1','0','0','1','1'])
+    elif(calc=="A-D" or calc=="M-D"):
+        currInst.extend(['0','0','0','1','1','1'])
+    elif(calc=="A&D" or calc=="D&A" or calc=="M&D" or calc=="D&M"):
+        currInst.extend(['0','0','0','0','0','0'])
+    elif(calc=="A|D" or calc=="D|A" or calc=="M|D" or calc=="D|M"):
+        currInst.extend(['0','1','0','1','0','1'])
+    
+    #interpret dest bits
+    if(ALoc<equalLoc and ALoc>-1):
+        currInst.append('1')
+    else:
+        currInst.append('0')
+    if(DLoc<equalLoc and DLoc>-1):
+        currInst.append('1')
+    else:
+        currInst.append('0')
+    if(MLoc<equalLoc and MLoc>-1):
+        currInst.append('1')
+    else:
+        currInst.append('0')
+        
+  #  print(jumpCode)
+    #handle jump bits
+    if(jumpCode=="000"):
+        currInst.extend(['0','0','0'])
+    elif(jumpCode=="JGT"):
+        currInst.extend(['0','0','1'])
+    elif(jumpCode=="JEQ"):
+        currInst.extend(['0','1','0'])
+    elif(jumpCode=="JGE"):
+        currInst.extend(['0','1','1'])
+    elif(jumpCode=="JLT"):
+        currInst.extend(['1','0','0'])
+    elif(jumpCode=="JNE"):
+        currInst.extend(['1','0','1'])
+    elif(jumpCode=="JLE"):
+        currInst.extend(['1','1','0'])
+    elif(jumpCode=="JMP"):
+        currInst.extend(['1','1','1'])
+
+    return
 
 def interpAInst(instruct, currInst): #TODO: take remaining bits as A reg
     instruct=instruct[1:]   #chops off "@"
     if(instruct.isnumeric()):
         #convert number to binary and store in currInst[1..15], currInst[1] = MSB
         instruct = format(int(instruct),'b') #convert to binary
-        binLen = len(instruct)
-        for i in range(1,16-binLen):
-            currInst.append('0')
-        for i in range(binLen):
-            currInst.append(instruct[i])
+        
     else:
+        #predefined symbols
+        instruct = checkPredef(instruct)        #check all predefined values
+        instruct = format(int(instruct) ,'b')
         #TODO: handle variable names
-        print(instruct + "is not a number")
+        #print(instruct + "is not a number")
+
+    binLen = len(instruct)
+    for i in range(1,16-binLen):
+        currInst.append('0')
+    for i in range(binLen):
+        currInst.append(instruct[i])
     return
 
+def toString(currInst):
+    currStr = ""
+    for letter in currInst:
+        currStr = currStr + letter
+    return currStr
 
 import sys
 inFileName = sys.argv[1]         #Use first command line arg as name of input file
@@ -41,20 +167,18 @@ for i in range(len(lines)):     #every line of pared down file
     for j in range(16):
         currInst.clear()
 #        currInst.append('0') #16 zeros to start each instruction fresh
-    if(lines[i].find("@")!=0):  #detects a- or c- command
-        currInst.append('1')     #TODO: maybe set locs 1 & 2 = 1 as well - match given assembler
-        interpCInst(lines[i])
+    if(lines[i].find("@")!=0 and lines[i].find("(")!=0):  #detects a- or c- command
+        currInst.extend(['1','1','1'])     #Set locs 1 & 2 = 1 as well - match given assembler
+        interpCInst(lines[i],currInst)
     else:
         currInst.append('0')
         interpAInst(lines[i], currInst)
 
-    instructs.append(str(currInst))
+    instructs.append(toString(currInst))
 
 
-for i in range(len(lines)):
-    print(lines[i])
-print("\n")
+# for i in range(len(lines)):
+#     print(lines[i])
+# print("\n")
 for i in range(len(instructs)):
     print(instructs[i])
-
-

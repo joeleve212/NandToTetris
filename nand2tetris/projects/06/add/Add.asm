@@ -5,8 +5,8 @@
 
 // Computes R0 = 2 + 3  (R0 refers to RAM[0])
 @2
-D=A
+D=M
 @3
-D=D+A
+D=D+M
 @0
 M=D
