@@ -192,11 +192,20 @@ for i in range(len(lines)):     #every line of pared down file
     else:
         instructs.append(toString(currInst))
 
+varLoc = 16     #first location for arbitrary variables
 for i in range(len(instructs)):
     if(not instructs[i].isnumeric()):
-        jumpLoc = labelDict.get(instructs[i][1:]) 
+ #       print(instructs[i])
+        if(labelDict.get(instructs[i][1:])):        #bug fix where jumpLoc = NoneType - This happens when using variables as A values that are not jump markers
+            jumpLoc = labelDict.get(instructs[i][1:])               
+            num = format(int(jumpLoc) ,'b')         #convert jumpLoc to binary value if it's a jump marker
+        else:                                       #handle variables as A inputs
+            labelDict[instructs[i][1:]] = varLoc    #each new variable will be assigned a value starting at 16
+            num = format(varLoc ,'b')                            #grab num value for this var
+            varLoc = varLoc + 1                     #increment varLoc for the next one
+        
         instructs[i]= instructs[i][0]      #remove all but the 0
-        num = format(int(jumpLoc) ,'b') 
+
         for j in range(15-len(num)):
             instructs[i] = instructs[i] + "0"
         instructs[i] = instructs[i] + num
