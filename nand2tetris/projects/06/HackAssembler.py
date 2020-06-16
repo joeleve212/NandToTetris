@@ -40,18 +40,12 @@ def interpCInst(instruct,currInst): # step through to check for each bit
         # usedLoc = MLoc          #usedLoc is location of either A or M, whichever is used in this instruct
     else:
         currInst.append('0')#a-bit set to 0, or not using M
-        # usedLoc = ALoc
-        # if(equalLoc<1):
-        #     #TODO: deal with jump instructs like D; JMP with no '='    and (LOOP) lines
-        #     test = 1
-#            print("Invalid Instruction?")
-    
-    calc = instruct[equalLoc+1:]
-    
+##This block fills in the c-bits
+    calc = instruct[equalLoc+1:]        #snip everything after the "="
     if(calc.find(';')>-1):              #cut out jump instruction if there is one
         calc = calc[:calc.find(';')]
-#    print(calc + "Is the calculation")
-    if(calc=="0"):                                  #This block fills in the c-bits
+    
+    if(calc=="0"):                                  
         currInst.extend(['1','0','1','0','1','0'])
     elif(calc=="1"):
         currInst.extend(['1','1','1','1','1','1'])
@@ -87,8 +81,7 @@ def interpCInst(instruct,currInst): # step through to check for each bit
         currInst.extend(['0','0','0','0','0','0'])
     elif(calc=="A|D" or calc=="D|A" or calc=="M|D" or calc=="D|M"):
         currInst.extend(['0','1','0','1','0','1'])
-    
-    #interpret dest bits
+##interpret dest bits
     if(ALoc<equalLoc and ALoc>-1):
         currInst.append('1')
     else:
@@ -100,10 +93,8 @@ def interpCInst(instruct,currInst): # step through to check for each bit
     if(MLoc<equalLoc and MLoc>-1):
         currInst.append('1')
     else:
-        currInst.append('0')
-        
-  #  print(jumpCode)
-    #handle jump bits
+        currInst.append('0')     
+##handle jump bits
     if(jumpCode=="000"):
         currInst.extend(['0','0','0'])
     elif(jumpCode=="JGT"):
@@ -154,6 +145,7 @@ def toString(currInst):
         currStr = currStr + letter
     return currStr
 
+## Main
 import sys
 inFileName = sys.argv[1]         #Use first command line arg as name of input file
 inFile = open(inFileName,"r")     
@@ -175,44 +167,37 @@ labelDict = {           #set up all necessary containers
     "START" : 0
 }
 
-for i in range(len(lines)):     #every line of pared down file
-    for j in range(16):
-        currInst.clear()
-#        currInst.append('0') #16 zeros to start each instruction fresh
+for i in range(len(lines)):                 #every line of stripped file
+    currInst.clear()                        #start each instruction fresh
     if(lines[i].find("@")!=0 and lines[i].find("(")!=0):  #detects a- or c- command
-        currInst.extend(['1','1','1'])     #Set locs 1 & 2 = 1 as well - match given assembler
-        interpCInst(lines[i],currInst)
+        currInst.extend(['1','1','1'])      #Set locs 1 & 2 = 1 as well - match given assembler
+        interpCInst(lines[i],currInst)      
     else:
         currInst.append('0')
         interpAInst(lines[i], currInst)
     
-    if(lines[i].find(")")>-1):   #check for jump markers
+    if(lines[i].find(")")>-1):              #check for jump markers
         labelDict[lines[i][1:len(lines[i])-1]] = i-offset   
-        offset = offset + 1         #adjust offset as more lines are not skipped going to output file
+        offset = offset + 1                 #adjust offset as more lines are not skipped going to output file
     else:
-        instructs.append(toString(currInst))
+        instructs.append(toString(currInst))#add non-jump markers to the instructs list
+#end of first loop
 
+##Secondary loop: handles variables and jump markers
 varLoc = 16     #first location for arbitrary variables
-for i in range(len(instructs)):
+for i in range(len(instructs)):     #separate loop because instructs will be a shorter list than lines w/o jump markers 
     if(not instructs[i].isnumeric()):
- #       print(instructs[i])
-        if(labelDict.get(instructs[i][1:])):        #bug fix where jumpLoc = NoneType - This happens when using variables as A values that are not jump markers
+        if(labelDict.get(instructs[i][1:])):        #retrieves value for label if it exists
             jumpLoc = labelDict.get(instructs[i][1:])               
             num = format(int(jumpLoc) ,'b')         #convert jumpLoc to binary value if it's a jump marker
-        else:                                       #handle variables as A inputs
+        else:                                       #handle new variables that are not jump markers 
             labelDict[instructs[i][1:]] = varLoc    #each new variable will be assigned a value starting at 16
             num = format(varLoc ,'b')                            #grab num value for this var
             varLoc = varLoc + 1                     #increment varLoc for the next one
         
-        instructs[i]= instructs[i][0]      #remove all but the 0
+        instructs[i]= instructs[i][0]               #remove all but the 0
 
         for j in range(15-len(num)):
             instructs[i] = instructs[i] + "0"
         instructs[i] = instructs[i] + num
-
-# for i in range(len(lines)):
-#     print(lines[i])
-# print("\n")
-for i in range(len(instructs)):
-    print(instructs[i])
-#print(labelDict)
+    print(instructs[i])                     #currently prints to console, or file by using "> fileName.hack"
