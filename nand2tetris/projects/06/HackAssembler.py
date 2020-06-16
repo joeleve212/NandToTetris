@@ -23,7 +23,9 @@ def checkPredef(addStr):
 
 def interpCInst(instruct,currInst): # step through to check for each bit
     equalLoc = instruct.find('=')
-    MLoc = instruct.find('M')
+    MLoc = instruct.find('M')   
+    if(MLoc-1==instruct.find("JMP")):    #if the 'M' found is within "JMP",
+        MLoc = -1                        #there is no legit 'M' on this line
     ALoc = instruct.find('A')
     DLoc = instruct.find('D')
 
@@ -33,7 +35,7 @@ def interpCInst(instruct,currInst): # step through to check for each bit
     else:
         jumpCode = "000"
 
-    if(MLoc>equalLoc):      #a-bit should be 1, assuming proper syntax (not using both A & M)
+    if(MLoc>equalLoc):      #a-bit should be 1, assuming proper syntax (not using both A & M)       
         currInst.append('1')
         # usedLoc = MLoc          #usedLoc is location of either A or M, whichever is used in this instruct
     else:
@@ -185,7 +187,7 @@ for i in range(len(lines)):     #every line of pared down file
         interpAInst(lines[i], currInst)
     
     if(lines[i].find(")")>-1):   #check for jump markers
-        labelDict[lines[i][1:len(lines[i])-1]] = i+1-offset   
+        labelDict[lines[i][1:len(lines[i])-1]] = i-offset   
         offset = offset + 1         #adjust offset as more lines are not skipped going to output file
     else:
         instructs.append(toString(currInst))
