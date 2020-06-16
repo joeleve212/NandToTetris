@@ -18,7 +18,7 @@ def checkPredef(addStr):
     elif(addStr=="KBD"):
         addVal = "24576"
     else:
-        addVal = "-1"           #this case only for invalid addresses
+        addVal = addStr           #this case only for invalid addresses
     return addVal
 
 def interpCInst(instruct,currInst): # step through to check for each bit
@@ -121,7 +121,7 @@ def interpCInst(instruct,currInst): # step through to check for each bit
 
     return
 
-def interpAInst(instruct, currInst): #TODO: take remaining bits as A reg
+def interpAInst(instruct, currInst): #take remaining bits as A reg
     instruct=instruct[1:]   #chops off "@"
     if(instruct.isnumeric()):
         #convert number to binary and store in currInst[1..15], currInst[1] = MSB
@@ -130,7 +130,12 @@ def interpAInst(instruct, currInst): #TODO: take remaining bits as A reg
     else:
         #predefined symbols
         instruct = checkPredef(instruct)        #check all predefined values
-        instruct = format(int(instruct) ,'b')
+        if(instruct.isnumeric()):               #check if checkPredef returned variable name or number
+            instruct = format(int(instruct) ,'b')
+        else:
+            currInst.append(instruct)
+            #print(instruct)        TODO: remove these sort of useless lines
+            return
         #TODO: handle variable names
         #print(instruct + "is not a number")
 
@@ -163,6 +168,11 @@ lines = [i for i in lines if i]    #remove blank lines
 #Now each line will be stripped down to only the code that can be interpreted
 instructs = []
 currInst = []
+offset = 0
+labelDict = {           #set up all necessary containers
+    "START" : 0
+}
+
 for i in range(len(lines)):     #every line of pared down file
     for j in range(16):
         currInst.clear()
@@ -173,12 +183,22 @@ for i in range(len(lines)):     #every line of pared down file
     else:
         currInst.append('0')
         interpAInst(lines[i], currInst)
+    
+    if(lines[i].find(")")>-1):   #check for jump markers
+        labelDict[lines[i][1:len(lines[i])-1]] = i+1-offset   
+        offset = offset + 1         #adjust offset as more lines are not skipped going to output file
+    else:
+        instructs.append(toString(currInst))
 
-    instructs.append(toString(currInst))
 
+    # if(not (instructs[line].isnumeric())):
+    #     del instructs[line]
+    #     line = line - 1
+    #     inc = inc + 1
 
 # for i in range(len(lines)):
 #     print(lines[i])
 # print("\n")
 for i in range(len(instructs)):
     print(instructs[i])
+#print(labelDict)
