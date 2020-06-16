@@ -190,11 +190,14 @@ for i in range(len(lines)):     #every line of pared down file
     else:
         instructs.append(toString(currInst))
 
-
-    # if(not (instructs[line].isnumeric())):
-    #     del instructs[line]
-    #     line = line - 1
-    #     inc = inc + 1
+for i in range(len(instructs)):
+    if(not instructs[i].isnumeric()):
+        jumpLoc = labelDict.get(instructs[i][1:]) 
+        instructs[i]= instructs[i][0]      #remove all but the 0
+        num = format(int(jumpLoc) ,'b') 
+        for j in range(15-len(num)):
+            instructs[i] = instructs[i] + "0"
+        instructs[i] = instructs[i] + num
 
 # for i in range(len(lines)):
 #     print(lines[i])
